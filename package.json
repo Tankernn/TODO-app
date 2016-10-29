@@ -26,7 +26,8 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "browserify -t [ babelify --presets [ react ] ] -t browserify-css src/index.js -o build/app.js",
+    "package": "webpack --config webpack.config.production.js --progress --colors",
+    "deploy": "",
     "start": "webpack-dev-server --progress --colors"
   },
   "author": "Tankernn",

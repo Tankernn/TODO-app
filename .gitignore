@@ -1,5 +1,6 @@
 # Compiled js
 bundle.js
+build/
 
 # Atom Remote-FTP
 .ftpconfig
