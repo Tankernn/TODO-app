@@ -1,21 +1,20 @@
 var React = require('react');
 var ReactDOM = require('react-dom');
 var Remarkable = require('remarkable');
-var DatePicker = require('react-datepicker');
-require('react-datepicker/dist/react-datepicker.css');
-var Bootstrap = require('react-bootstrap');
-var moment = require('moment');
+var Button = require('react-bootstrap').Button;
+var FormControl = require('react-bootstrap').FormControl;
+var DatePicker = require('react-bootstrap-date-picker');
 var $ = require('jquery');
 
 var TodoForm = React.createClass({
   getInitialState: function() {
-    return {title: '', text: '', deadline: moment(), priority: '1'};
+    return {title: '', text: '', deadline: new Date().toISOString(), priority: '1'};
   },
   handleTitleChange: function(e) {
     this.setState({title: e.target.value});
   },
-  handleDateChange: function(date) {
-    this.setState({deadline: date});
+  handleDateChange: function(dateString) {
+    this.setState({deadline: dateString});
   },
   handlePriorityChange: function(e) {
     this.setState({priority: e.target.value});
@@ -28,52 +27,78 @@ var TodoForm = React.createClass({
     var title = this.state.title.trim();
     var text = this.state.text.trim();
     var priority = this.state.priority;
-    var deadline = this.state.deadline._d.toLocaleDateString();
+    var deadline = this.state.deadline;
     console.log(deadline);
     if (!title || !text || !deadline) {
       return;
     }
     this.props.onCommentSubmit({a: 'add', title: title, text: text, deadline: deadline, priority: priority});
-    this.setState({title: '', text: '', deadline: moment(), priority: '1'});
+    this.setState(this.getInitialState());
   },
   render: function() {
     return (
       <form className="form-inline" name="todoForm" onSubmit={this.handleSubmit}>
-        <input
-          className="form-control"
+        <FormControl
           type="text"
           placeholder="Title"
           value={this.state.title}
           onChange={this.handleTitleChange}
         />
-        <select className="form-control" value={this.state.priority} onChange={this.handlePriorityChange}>
+        <FormControl componentClass="select" value={this.state.priority} onChange={this.handlePriorityChange}>
           <option value="1">First priority</option>
           <option value="2">Second priority</option>
           <option value="3">Not very important</option>
           <option value="4">Only if you are bored</option>
-        </select>
+        </FormControl>
         <DatePicker
-          placeholder="yyyy-mm-dd"
-          selected={this.state.deadline}
+          value={this.state.deadline}
           onChange={this.handleDateChange}
         />
         <br />
-        <textarea
-          className="form-control"
+        <FormControl
+          componentClass="textarea"
           value={this.state.text}
-          onChange={this.handleTextChange}>
-        </textarea>
+          onChange={this.handleTextChange} />
         <br />
-        <input className="btn btn-primary" type="submit" value="Add" />
+        <Button bsStyle="primary" type="submit">Add</Button>
       </form>
     );
   }
 });
 
 var LoginForm = React.createClass({
+  getInitialState: function() {
+    return {user: '', pass: ''};
+  },
+  handleUserChange: function(e) {
+    this.setState({user: e.target.value});
+  },
+  handlePassChange: function(e) {
+    this.setState({pass: e.target.value});
+  },
+  handleSubmit: function(e) {
+    e.preventDefault();
+    var user = this.state.user;
+    var pass = this.state.pass;
+    if (!user || !pass) {
+      return;
+    }
+    $.post(
+      "https://tankernn.eu/login/check_login.php",
+      {user: user, pass: pass},
+      function(result) {
+        console.log(result);
+      }
+    );
+    this.setState(this.getInitialState());
+  },
   render: function() {
     return (
-      <a href="http://tankernn.eu/login?redirect=http://todo.tankernn.eu">Log In</a>
+      <form id="loginForm" name="loginForm" onSubmit={this.handleSubmit}>
+        <FormControl type="text" value={this.state.user} onChange={this.handleUserChange} />
+        <FormControl type="password" value={this.state.pass} onChange={this.handlePassChange} />
+        <Button bsStyle="primary" type="submit">Log in</Button>
+      </form>
     );
   }
 });
@@ -141,23 +166,31 @@ var App = React.createClass({
         if (data.result != 0) {
           console.log("Error in API: " + data.result);
         }
-        this.setState({list: data.list});
+        this.setState({list: data.list, result: data.result});
       }.bind(this),
       error: function(xhr, status, err) {
         console.error(this.props.url, status, err.toString());
+        this.setState({result: 1});
       }.bind(this)
     });
   },
   render: function() {
-    return (
-      <main>
-        <h1>Tankernn TODO list</h1>
-        <TodoForm onCommentSubmit={this.handleCommentSubmit} />
-        <TodoList list={this.state.list} />
-        <LoginForm />
-      </main>
-    );
+    if (this.state.result == 0)
+      return (
+        <main>
+          <h1>Tankernn TODO list</h1>
+          <TodoForm onCommentSubmit={this.handleCommentSubmit} />
+          <TodoList list={this.state.list} />
+        </main>
+      );
+    else
+      return (
+        <main>
+          <h1>Tankernn TODO list</h1>
+          <LoginForm />
+        </main>
+      );
   }
 });
 
-ReactDOM.render(<App url="/php/api.php" />, document.getElementById('content'));
+ReactDOM.render(<App url="https://todo.tankernn.eu/php/api.php" />, document.getElementById('content'));
