@@ -3,8 +3,15 @@ var ReactDOM = require('react-dom');
 var Remarkable = require('remarkable');
 var Button = require('react-bootstrap').Button;
 var FormControl = require('react-bootstrap').FormControl;
+var FormGroup = require('react-bootstrap').FormGroup;
+var Panel = require('react-bootstrap').Panel;
 var DatePicker = require('react-bootstrap-date-picker');
 var $ = require('jquery');
+
+const LOGIN_URL = "https://tankernn.eu/login/check_login.php";
+const API_URL = "https://todo.tankernn.eu/php/api.php";
+
+const priorityNames = {1: "danger", 2: "warning", 3: "primary", 4: "success"};
 
 var TodoForm = React.createClass({
   getInitialState: function() {
@@ -83,13 +90,7 @@ var LoginForm = React.createClass({
     if (!user || !pass) {
       return;
     }
-    $.post(
-      "https://tankernn.eu/login/check_login.php",
-      {user: user, pass: pass},
-      function(result) {
-        console.log(result);
-      }
-    );
+    this.props.onLoginSubmit({user: user, pass: pass});
     this.setState(this.getInitialState());
   },
   render: function() {
@@ -109,13 +110,15 @@ var Item = React.createClass({
     var rawMarkup = md.render(this.props.children.toString());
     return { __html: rawMarkup };
   },
+  handleEditClick: function() {
+    console.log("I wanna edit.");
+  },
   render: function() {
     var md = new Remarkable();
     return (
-      <div className="item">
-        <h2>{this.props.title}</h2>
+      <Panel header={this.props.title} footer={<FormGroup><Button bsStyle="primary" onClick={this.handleEditClick}>Edit</Button><Button bsStyle="danger">Delete</Button></FormGroup>} bsStyle={priorityNames[this.props.priority]}>
         <span dangerouslySetInnerHTML={this.rawMarkup()} />
-      </div>
+      </Panel>
     );
   }
 });
@@ -125,7 +128,7 @@ var TodoList = React.createClass({
     console.log(this.props.list);
     var itemList = this.props.list.map(function(item) {
       return (
-        <Item priority={item.priority} title={item.title} key={item.id}>
+        <Item priority={item.priority} title={item.title} key={item.id} deadline={item.deadline}>
           {item.description}
         </Item>
       );
@@ -140,20 +143,23 @@ var TodoList = React.createClass({
 
 var App = React.createClass({
   getInitialState: function() {
-    return {list: []};
+    return {list: [], result: 0};
   },
-  componentDidMount: function() {
+  updateList: function() {
     $.ajax({
       url: this.props.url,
       dataType: 'json',
       type: 'GET',
       success: function(data) {
-        this.setState({list: data.list});
+        this.setState({list: data.list, result: data.result});
       }.bind(this),
       error: function(xhr, status, err) {
         console.error(this.props.url, status, err.toString());
       }.bind(this)
     });
+  },
+  componentDidMount: function() {
+    this.updateList();
   },
   handleCommentSubmit: function(comment) {
     $.ajax({
@@ -174,8 +180,21 @@ var App = React.createClass({
       }.bind(this)
     });
   },
+  handleLoginSubmit: function(data) {
+    $.ajax({
+      url: LOGIN_URL,
+      cache: false,
+      type: 'POST',
+      data: data,
+      success: function(result) {
+        console.log(result);
+        this.forceUpdate();
+      }.bind(this)
+    });
+  },
   render: function() {
-    if (this.state.result == 0)
+    console.log(this.state);
+    if (this.state.result != 1)
       return (
         <main>
           <h1>Tankernn TODO list</h1>
@@ -187,10 +206,10 @@ var App = React.createClass({
       return (
         <main>
           <h1>Tankernn TODO list</h1>
-          <LoginForm />
+          <LoginForm onLoginSubmit={this.handleLoginSubmit} />
         </main>
       );
   }
 });
 
-ReactDOM.render(<App url="https://todo.tankernn.eu/php/api.php" />, document.getElementById('content'));
+ReactDOM.render(<App url={API_URL} />, document.getElementById('content'));

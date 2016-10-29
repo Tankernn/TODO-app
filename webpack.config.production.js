@@ -1,11 +1,9 @@
 var path = require('path');
 var webpack = require('webpack');
 
-var BUILD_DIR = path.resolve(__dirname, 'build');
-
 module.exports = {
   entry: './js/index.js',
-  output: { path: BUILD_DIR, filename: 'bundle.js' },
+  output: { path: __dirname, filename: 'bundle.js' },
   module: {
     loaders: [
       {

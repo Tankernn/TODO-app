@@ -1,4 +1,6 @@
 <?php
+  header("Access-Control-Allow-Origin: *");
+
   session_name('default');
   session_set_cookie_params(0, '/', '.tankernn.eu');
   session_start();
@@ -34,7 +36,7 @@
           break;
       }
     }
-    $sql = "SELECT * FROM Todo WHERE userid=$userid";
+    $sql = "SELECT * FROM Todo WHERE userid=$userid ORDER BY deadline ASC, priority ASC";
     $query = $conn->query($sql);
     $data->list = array();
     while ($row = $query->fetch_array()) {

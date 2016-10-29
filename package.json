@@ -22,14 +22,15 @@
     "babel-preset-es2015": "^6.3.13",
     "babel-preset-react": "^6.3.13",
     "css-loader": "^0.25.0",
-    "webpack": "^1.13.2"
+    "webpack": "^1.13.2",
+    "webpack-dev-server": "^1.16.2"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "package": "webpack --config webpack.config.production.js --progress --colors",
-    "deploy": "",
+    "deploy": "npm run-script package && bash ./deploy.sh",
     "start": "webpack-dev-server --progress --colors"
   },
   "author": "Tankernn",
-  "license": "ISC"
+  "license": "MIT"
 }
