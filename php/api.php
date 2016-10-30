@@ -14,9 +14,8 @@
     $data->result = 1;
   } else {
     $userid = $_SESSION['userid'];
-    if (!isset($_POST['a'])) {
-      $data->result = 2;
-    } else {
+    if (isset($_POST['a'])) {
+      // Additional actions to perform before returning the list
       switch ($_POST['a']) {
         case 'add':
           $title = $_POST['title'];
@@ -24,15 +23,18 @@
           $deadline = $_POST['deadline'];
           $priority = $_POST['priority'];
 
-          $sql = "INSERT INTO Todo (userid, priority, deadline, title, description) VALUES ($userid, $priority, $deadline, '$title', '$text')";
+          $data->message = $deadline;
+
+          $sql = "INSERT INTO Todo (userid, priority, deadline, title, description) VALUES ($userid, $priority, '$deadline', '$title', '$text')";
 
           $data->result = $conn->query($sql) ? 0 : $conn->error;
 
           break;
         case 'rm':
-          $id = $_GET['id'];
+          $id = $_POST['id'];
 
-          $sql = "DELETE FROM Todo WHERE id=$id";
+          $sql = "DELETE FROM Todo WHERE id=$id AND userid=$userid";
+          $data->result = $conn->query($sql) ? 0 : $conn->error;
           break;
       }
     }

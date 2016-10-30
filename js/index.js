@@ -2,20 +2,25 @@ var React = require('react');
 var ReactDOM = require('react-dom');
 var Remarkable = require('remarkable');
 var Button = require('react-bootstrap').Button;
+var ButtonToolbar = require('react-bootstrap').ButtonToolbar;
 var FormControl = require('react-bootstrap').FormControl;
 var FormGroup = require('react-bootstrap').FormGroup;
 var Panel = require('react-bootstrap').Panel;
 var DatePicker = require('react-bootstrap-date-picker');
+var dateFormat = require('dateformat');
 var $ = require('jquery');
 
-const LOGIN_URL = "https://tankernn.eu/login/check_login.php";
 const API_URL = "https://todo.tankernn.eu/php/api.php";
 
 const priorityNames = {1: "danger", 2: "warning", 3: "primary", 4: "success"};
 
+function dateToString(date) {
+  return dateFormat(date, "yyyy-mm-dd");
+}
+
 var TodoForm = React.createClass({
   getInitialState: function() {
-    return {title: '', text: '', deadline: new Date().toISOString(), priority: '1'};
+    return {title: '', text: '', deadline: new Date().toISOString(), priority: 1};
   },
   handleTitleChange: function(e) {
     this.setState({title: e.target.value});
@@ -34,7 +39,7 @@ var TodoForm = React.createClass({
     var title = this.state.title.trim();
     var text = this.state.text.trim();
     var priority = this.state.priority;
-    var deadline = this.state.deadline;
+    var deadline = dateToString(this.state.deadline);
     console.log(deadline);
     if (!title || !text || !deadline) {
       return;
@@ -73,37 +78,6 @@ var TodoForm = React.createClass({
   }
 });
 
-var LoginForm = React.createClass({
-  getInitialState: function() {
-    return {user: '', pass: ''};
-  },
-  handleUserChange: function(e) {
-    this.setState({user: e.target.value});
-  },
-  handlePassChange: function(e) {
-    this.setState({pass: e.target.value});
-  },
-  handleSubmit: function(e) {
-    e.preventDefault();
-    var user = this.state.user;
-    var pass = this.state.pass;
-    if (!user || !pass) {
-      return;
-    }
-    this.props.onLoginSubmit({user: user, pass: pass});
-    this.setState(this.getInitialState());
-  },
-  render: function() {
-    return (
-      <form id="loginForm" name="loginForm" onSubmit={this.handleSubmit}>
-        <FormControl type="text" value={this.state.user} onChange={this.handleUserChange} />
-        <FormControl type="password" value={this.state.pass} onChange={this.handlePassChange} />
-        <Button bsStyle="primary" type="submit">Log in</Button>
-      </form>
-    );
-  }
-});
-
 var Item = React.createClass({
   rawMarkup: function() {
     var md = new Remarkable();
@@ -113,10 +87,37 @@ var Item = React.createClass({
   handleEditClick: function() {
     console.log("I wanna edit.");
   },
+  handleDeleteClick: function() {
+    console.log("Deleting " + this.props.id);
+    this.props.handleDeleteClick(this.props.id);
+
+  },
   render: function() {
     var md = new Remarkable();
+
+    var daysLeft = Math.ceil((new Date(this.props.deadline) - new Date()) / (1000 * 60 * 60 * 24));
+
+    if (daysLeft > 1) {
+      daysLeft += " days left.";
+    } else if (daysLeft == 1) {
+      daysLeft = "One day left.";
+    } else if (daysLeft == 0) {
+      daysLeft = "Today!";
+    } else {
+      daysLeft = "Should have been done " + Math.abs(daysLeft) + " day(s) ago."
+    }
+
     return (
-      <Panel header={this.props.title} footer={<FormGroup><Button bsStyle="primary" onClick={this.handleEditClick}>Edit</Button><Button bsStyle="danger">Delete</Button></FormGroup>} bsStyle={priorityNames[this.props.priority]}>
+      <Panel
+        header={<header><span className="deadline">{daysLeft}</span><h3>{this.props.title}</h3></header>}
+        footer={
+          <ButtonToolbar>
+            <Button bsStyle="primary" onClick={this.handleEditClick}>Edit</Button>
+            <Button bsStyle="danger" onClick={this.handleDeleteClick}>Delete</Button>
+          </ButtonToolbar>
+        }
+        bsStyle={priorityNames[this.props.priority]}
+      >
         <span dangerouslySetInnerHTML={this.rawMarkup()} />
       </Panel>
     );
@@ -126,9 +127,10 @@ var Item = React.createClass({
 var TodoList = React.createClass({
   render: function() {
     console.log(this.props.list);
+    var onDeleteClick = this.props.onDeleteClick;
     var itemList = this.props.list.map(function(item) {
       return (
-        <Item priority={item.priority} title={item.title} key={item.id} deadline={item.deadline}>
+        <Item handleDeleteClick={onDeleteClick} priority={item.priority} title={item.title} id={item.id} key={item.id} deadline={item.deadline}>
           {item.description}
         </Item>
       );
@@ -172,6 +174,9 @@ var App = React.createClass({
         if (data.result != 0) {
           console.log("Error in API: " + data.result);
         }
+        if (data.hasOwnProperty("message")) {
+          console.log("API message: " + data.message);
+        }
         this.setState({list: data.list, result: data.result});
       }.bind(this),
       error: function(xhr, status, err) {
@@ -180,35 +185,29 @@ var App = React.createClass({
       }.bind(this)
     });
   },
-  handleLoginSubmit: function(data) {
+  handleDelete: function(id) {
     $.ajax({
-      url: LOGIN_URL,
+      url: this.props.url,
+      dataType: 'json',
       cache: false,
       type: 'POST',
-      data: data,
-      success: function(result) {
-        console.log(result);
-        this.forceUpdate();
+      data: {a: 'rm', id: id},
+      success: function(data) {
+        this.setState({list: data.list, result: data.result});
+      }.bind(this),
+      error: function(xhr, status, err) {
+        console.error(this.props.url, status, err.toString());
       }.bind(this)
     });
   },
   render: function() {
-    console.log(this.state);
-    if (this.state.result != 1)
-      return (
-        <main>
-          <h1>Tankernn TODO list</h1>
-          <TodoForm onCommentSubmit={this.handleCommentSubmit} />
-          <TodoList list={this.state.list} />
-        </main>
-      );
-    else
-      return (
-        <main>
-          <h1>Tankernn TODO list</h1>
-          <LoginForm onLoginSubmit={this.handleLoginSubmit} />
-        </main>
-      );
+    return (
+      <main>
+        <h1>Tankernn TODO list</h1>
+        <TodoForm onCommentSubmit={this.handleCommentSubmit} />
+        <TodoList onDeleteClick={this.handleDelete} list={this.state.list} />
+      </main>
+    );
   }
 });
 
