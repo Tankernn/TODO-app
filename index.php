@@ -1,12 +1,3 @@
-<?php
-  session_name('default');
-  session_set_cookie_params(0, '/', '.tankernn.eu');
-  session_start();
-  if (!isset($_SESSION['userid'])) {
-    header("Location: http://tankernn.eu/login?redirect=http://todo.tankernn.eu");
-  }
-?>
-
 <!DOCTYPE html>
 <html>
 
