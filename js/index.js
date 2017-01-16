@@ -8,6 +8,7 @@ var FormGroup = require('react-bootstrap').FormGroup;
 var Panel = require('react-bootstrap').Panel;
 var Modal = require('react-bootstrap').Modal;
 var DatePicker = require('react-bootstrap-date-picker');
+var FontAwesome = require('react-fontawesome');
 var dateFormat = require('dateformat');
 var $ = require('jquery');
 
@@ -63,7 +64,7 @@ var TodoForm = React.createClass({
   render: function() {
     return (
       <div>
-        <Button bsStyle="primary" onClick={this.openModal}>{this.props.edit ? "Edit" : "Add"}</Button>
+        <Button bsStyle="primary" onClick={this.openModal}><FontAwesome name='edit' /> {this.props.edit ? "Edit" : "Add"}</Button>
 
         <Modal show={this.state.showModal} onHide={this.closeModal}>
           <form name="todoForm" onSubmit={this.handleSubmit}>
@@ -95,8 +96,8 @@ var TodoForm = React.createClass({
             </Modal.Body>
             <Modal.Footer>
               <ButtonToolbar>
-                <Button bsStyle="primary" type="submit">Save</Button>
-                <Button onClick={this.closeModal}>Cancel</Button>
+                <Button bsStyle="primary" type="submit"><FontAwesome name='save' /> Save</Button>
+                <Button onClick={this.closeModal}><FontAwesome name='ban' /> Cancel</Button>
               </ButtonToolbar>
             </Modal.Footer>
           </form>
@@ -157,7 +158,7 @@ var Item = React.createClass({
         footer={
           <ButtonToolbar>
             {todoForm}
-            <Button bsStyle="danger" onClick={this.handleDeleteClick}>Delete</Button>
+            <Button bsStyle="danger" onClick={this.handleDeleteClick}><FontAwesome name='trash' /> Delete</Button>
           </ButtonToolbar>
         }
         bsStyle={priorityNames[this.props.priority]}
@@ -200,7 +201,7 @@ var App = React.createClass({
       success: function(data) {
         // Not logged in
         if (data.result == 1) {
-          document.location.href = "https://tankernn.eu/login/";
+          document.location.href = "https://login.tankernn.eu/";
         }
         // Success
         this.setState({list: data.list, result: data.result});
@@ -212,6 +213,10 @@ var App = React.createClass({
   },
   componentDidMount: function() {
     this.updateList();
+    this.timer = setInterval(this.updateList, 5000);
+  },
+  componentWillUnmount: function() {
+    clearInterval(this.timer);
   },
   handleCommentSubmit: function(comment) {
     $.ajax({

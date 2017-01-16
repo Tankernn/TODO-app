@@ -20,8 +20,8 @@
         case 'edit':
           $id = $_POST['id'];
         case 'add':
-          $title = $_POST['title'];
-          $text = $_POST['text'];
+          $title = $conn->escape_string($_POST['title']);
+          $text = $conn->escape_string($_POST['text']);
           $deadline = $_POST['deadline'];
           $priority = $_POST['priority'];
           if (strtotime($deadline) <= time()) {
