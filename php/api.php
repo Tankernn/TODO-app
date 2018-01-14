@@ -6,7 +6,7 @@
   session_start();
 
   // Database settings
-  require ("db.php");
+  require ("config.php");
 
   $data = new StdClass();
 
