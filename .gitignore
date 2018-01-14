@@ -2,13 +2,6 @@
 bundle.js
 build/
 
-# Atom Remote-FTP
-.ftpconfig
-.ftpignore
-
-# DB settings
-php/db.php
-
 # Logs
 logs
 *.log
